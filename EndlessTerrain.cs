@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class EndlessTerrain : MonoBehaviour
 {
-    private const float SCALE = 1f;
     // Viewer Move Threshold For Chunk Update
     private const float VMTFCU = 25f;
     // Square VMTFCU
@@ -26,7 +25,7 @@ public class EndlessTerrain : MonoBehaviour
         m_mapGenerator = FindObjectOfType<MapGenerator>();
 
         m_maxViewDistance = detailLevels[detailLevels.Length - 1].visibleDistanceThreshold;
-        m_chunkSize = MapGenerator.MAPCHUNKSIZE - 1;
+        m_chunkSize = m_mapGenerator.mapChunkSize - 1;
         m_chunksVisibleInDistance = Mathf.RoundToInt(m_maxViewDistance / m_chunkSize);
         
         UpdateVisibleChunks();
@@ -34,7 +33,7 @@ public class EndlessTerrain : MonoBehaviour
     
     private void Update()
     {
-        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / SCALE;
+        viewerPosition = new Vector2(viewer.position.x, viewer.position.z) / m_mapGenerator.terrainData.uniformScale;
 
         if ( !( (m_previousViewerPosition - viewerPosition).sqrMagnitude > SQRVMTFCU) )
             return;
@@ -103,9 +102,9 @@ public class EndlessTerrain : MonoBehaviour
             m_meshCollider = m_meshObject.AddComponent<MeshCollider>();
             m_meshRenderer.material = material;
 
-            m_meshObject.transform.position = positionV3 * SCALE;
+            m_meshObject.transform.position = positionV3 * m_mapGenerator.terrainData.uniformScale;
             m_meshObject.transform.parent = parent;
-            m_meshObject.transform.localScale = Vector3.one * SCALE;
+            m_meshObject.transform.localScale = Vector3.one * m_mapGenerator.terrainData.uniformScale;
 
             SetVisible(false);
 
@@ -192,9 +191,6 @@ public class EndlessTerrain : MonoBehaviour
         {
             m_mapData = mapData;
             m_mapDataReceived = true;
-
-            Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.colorMap, MapGenerator.MAPCHUNKSIZE, MapGenerator.MAPCHUNKSIZE);
-            m_meshRenderer.material.mainTexture = texture;
 
             UpdateTerrainChunk();
         }

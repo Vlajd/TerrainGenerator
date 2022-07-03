@@ -2,7 +2,7 @@ using UnityEngine;
 
 public static class MeshGenerator
 {
-    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, AnimationCurve _heightCurve, int levelOfDetail)
+    public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, AnimationCurve _heightCurve, int levelOfDetail, bool useFlatShading)
     {
         AnimationCurve heightCurve = new AnimationCurve(_heightCurve.keys);
 
@@ -18,7 +18,7 @@ public static class MeshGenerator
 
         int verteciesPerLine = (meshSize - 1) / meshSI + 1;
 
-        MeshData meshData = new MeshData(verteciesPerLine);
+        MeshData meshData = new MeshData(verteciesPerLine, useFlatShading);
 
         int[,] vertexIndicesMap = new int[borderedSize,borderedSize];
         int meshVertexIndex = 0;
@@ -70,7 +70,7 @@ public static class MeshGenerator
             }
         }
         
-        meshData.BakeNormals();
+        meshData.ProcessMesh();
 
         return meshData;
     }
@@ -88,8 +88,9 @@ public class MeshData
 
     private int m_triangleIndex = 0;
     private int m_borderTriangleIndex = 0;
+    private bool m_useFlatShading;
 
-    public MeshData(int verteciesPerLine)
+    public MeshData(int verteciesPerLine, bool useFlatShading)
     {
         int doubleVerteciesPerLine = verteciesPerLine * verteciesPerLine;
         m_vertices = new Vector3[doubleVerteciesPerLine];
@@ -98,6 +99,7 @@ public class MeshData
 
         m_borderVertices = new Vector3[verteciesPerLine * 4 + 4];
         m_borderIndices = new int[24 * verteciesPerLine];
+        m_useFlatShading = useFlatShading;
     }
 
     public void AddVertex(Vector3 vertexPosition, Vector2 texCoord, int vertexIndex)
@@ -137,11 +139,28 @@ public class MeshData
         mesh.vertices = m_vertices;
         mesh.triangles = m_indices;
         mesh.uv = m_texCoords;
-        mesh.normals = m_bakedNormals;
+
+        if (m_useFlatShading)
+            mesh.RecalculateNormals();
+        else
+            mesh.normals = m_bakedNormals;
+
         return mesh;
     }
 
-    public void BakeNormals()
+    public void ProcessMesh()
+    {
+        if (m_useFlatShading)
+        {
+            FlatShading();
+        }
+        else
+        {
+            BakeNormals();
+        }
+    }
+
+    private void BakeNormals()
     {
         m_bakedNormals = CalculateNormals();
     }
@@ -185,6 +204,22 @@ public class MeshData
             vertexNormal.Normalize();
 
         return vertexNormals;
+    }
+    
+    private void FlatShading()
+    {
+        Vector3[] flatShadedVertices = new Vector3[m_indices.Length];
+        Vector2[] flatShadedTexCoords = new Vector2[m_indices.Length];
+
+        for (int i = 0; i < m_indices.Length; i++)
+        {
+            flatShadedVertices[i] = m_vertices[m_indices[i]];
+            flatShadedTexCoords[i] = m_texCoords[m_indices[i]];
+            m_indices[i] = i;
+        }
+
+        m_vertices = flatShadedVertices;
+        m_texCoords = flatShadedTexCoords;
     }
 
     private Vector3 SurfaceNormalFromIndices(int indexA, int indexB, int indexC)
