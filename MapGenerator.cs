@@ -29,7 +29,7 @@ public class MapGenerator : MonoBehaviour
     [Header("Visualization")]
     public bool autoUpdate;
     
-    [HideInInspector] public const int MAPCHUNKSIZE = 241;
+    [HideInInspector] public const int MAPCHUNKSIZE = 239;
 
     private float[,] m_falloffMap;
     private Queue<MapThreadInfo<MapData>> m_mapDataThreadInfoQueue = new Queue<MapThreadInfo<MapData>>();
@@ -123,7 +123,7 @@ public class MapGenerator : MonoBehaviour
 
     private MapData GenerateMapData(Vector2 centre)
     {
-        float[,] noiseMap = Noise.GenerateNoiseMap(MAPCHUNKSIZE, MAPCHUNKSIZE, noiseScale, octaves, persistance, lacunarity, seed, centre + offset, normalizeMode);
+        float[,] noiseMap = Noise.GenerateNoiseMap(MAPCHUNKSIZE + 2, MAPCHUNKSIZE + 2, noiseScale, octaves, persistance, lacunarity, seed, centre + offset, normalizeMode);
 
         Color[] colorMap = new Color[MAPCHUNKSIZE * MAPCHUNKSIZE];
         for (int y = 0; y < MAPCHUNKSIZE; y++)
